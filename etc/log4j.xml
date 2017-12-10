@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<!-- ===================================================================== -->
+<!--                                                                       -->
+<!--  Log4j Configuration                                                  -->
+<!--                                                                       -->
+<!-- ===================================================================== -->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+
+   <!-- ================================= -->
+   <!-- Console output                    -->
+   <!-- ================================= -->
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out" />
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%5p [%d{yyyy-MM-dd HH:mm:ss,SSS}] [%t] [%C] -- %m%n" />
+        </layout>
+    </appender> 
+
+
+   <!-- ================================= -->
+   <!-- Preserve messages in a local file -->
+   <!-- ================================= -->
+
+    <!-- 
+        A size based file rolling appender
+    -->
+    <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
+
+        <param name="File" value="${atms.log.dir}/${atms.log.filename}" />
+        <param name="Append" value="true" />
+        <param name="MaxFileSize" value="25MB" />
+        <param name="MaxBackupIndex" value="10" />
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%5p [%d{yyyy-MM-dd HH:mm:ss,SSS}] [%t] [%C] -- %m%n" />
+        </layout>
+    </appender>
+   
+   <!-- ================ -->
+   <!-- Limit categories -->
+   <!-- ================ -->
+
+    <category name="org.hibernate">
+        <priority value="WARN" />
+    </category>
+
+    <category name="org.apache">
+        <priority value="WARN" />
+    </category>
+
+    <category name="com.delcan">
+        <priority value="DEBUG" />
+    </category>
+
+    <category name="common">
+        <priority value="DEBUG" />
+    </category>
+    
+    <category name="display">
+        <priority value="DEBUG" />
+    </category>
+    
+    <category name="protocol">
+        <priority value="DEBUG" />
+    </category>        
+
+    <category name="server.services">
+        <priority value="DEBUG" />
+    </category>
+    
+   <!-- ======================= -->
+   <!-- Setup the Root category -->
+   <!-- ======================= -->
+
+    <root>
+        <priority value="debug" />
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+
+</log4j:configuration>
