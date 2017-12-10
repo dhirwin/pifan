@@ -1,0 +1,320 @@
+<?xml version="1.0"?>
+<!-- ===========================================================================
+
+Ant build file to compiling schema binder library. 
+
+Installing the build tools
+==========================
+
+Jakarta Ant is a Java building tool originally developed for the Jakarta 
+Tomcat project but now used in many other Apache projects and extended by
+many developers.
+
+Make sure, the "JAVA_HOME" and "ANT_HOME" environment.
+
+Running the build tools
+=======================
+
+Currently, there are several tools that are required to build the Lake County
+project that are only located on the lcdev development server. For example,
+the IDL compiler and Jar signature keys are only on the server. For this
+reason it's recommended that all compilation be done on the lcdev development
+server.
+
+Refer to the "usage" target for more specific information on running this
+Ant build tool.
+
+============================================================================ -->
+
+<project name="pifan" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+
+	<tstamp>
+		<format property="date" pattern="yyyy.MM.dd" />
+	</tstamp>
+
+	<!-- Access environment variables, for example "env.JAVA_HOME" -->
+	<property environment="env" />
+
+	<!-- if foreach osfamily switch if -->
+	<!-- <taskdef resource="net/sf/antcontrib/antcontrib.properties" /> -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" />
+
+	<!-- =================================================================== -->
+	<!-- Give users a chance to override default build properties.           -->
+	<!-- =================================================================== -->
+	<property file="${basedir}${file.separator}default.properties" />
+
+	<!-- Import the ATMS commons Ant tasks -->
+	<import>
+		<javaresource name="ant-src/common.xml">
+			<classpath location="lib/atms/atms-commons-build.jar">
+			</classpath>
+		</javaresource>
+	</import>
+
+	<!-- =================================================================== -->
+	<!-- Other default build properties.                                     -->
+	<!-- =================================================================== -->
+	<property name="javaws.jar" value="${java.dir}/jre/javaws/javaws.jar" />
+
+	<!-- Create a library fileset. -->
+	<path id="cots.libraries">
+		<fileset dir="${cots.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+    <path id="atms.libraries">
+        <fileset dir="${atms.dir}">
+            <include name="*.jar" />
+        </fileset>
+    </path>	
+
+	<!-- Path reference for the project classpath -->
+	<path id="project.class.path">
+		<pathelement path="${build.conf.dir}" />
+		<pathelement path="${build.classes.dir}${file.separator}api" />
+		<pathelement path="${build.classes.dir}${file.separator}probe" />
+		<fileset dir="${cots.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- Hibernate metadata files -->
+	<patternset id="meta.files">
+		<include name="**/*.xml" />
+		<include name="**/*.dtd" />
+		<include name="**/*.properties" />
+	</patternset>
+
+	<!-- ====================================================================== -->
+	<!-- Create the build directory and fetch operating system specifics     	-->
+	<!-- ====================================================================== -->
+	<target name="prepare" description="For internal use only">
+		<echo message="Preparing the build environment" />
+		<echo message="-------------------------------" />
+		<echo message="" />
+
+		<!-- Print out some environment properites -->
+		<echo message="USER set to:        ${user.name}" />
+		<echo message="JAR signing set to: ${sign.jars}" />
+
+		<!-- Create the necessary build folders -->
+		<mkdir dir="${build.classes.dir}" />
+	    <mkdir dir="${build.classes.dir}${file.separator}api" />
+	    <mkdir dir="${build.classes.dir}${file.separator}probe" />
+		<mkdir dir="${build.etc.dir}" />
+
+		<!-- Copy all of the images -->
+		<copy todir="${build.classes.dir}">
+			<fileset dir="${probe.src.dir}">
+				<include name="**/**.jpg" />
+				<include name="**/**.png" />
+				<include name="**/**.gif" />
+			</fileset>
+		</copy>
+
+		<!-- Copy over the Hibernate mapping files -->
+		<copy todir="${build.classes.dir}">
+			<fileset dir="${probe.src.dir}">
+				<patternset refid="meta.files" />
+			</fileset>
+		</copy>
+
+		<!-- Copy the necessary library files -->
+		<mkdir dir="${build.cots.dir}" />
+		<copy todir="${build.cots.dir}">
+			<fileset dir="${cots.dir}">
+				<include name="*.jar" />
+				<include name="JNativeCpp.dll" />
+			</fileset>
+		</copy>
+
+		<!-- Copy the necessary configuration files -->
+		<copy todir="${build.etc.dir}">
+			<fileset dir="${etc.dir}">
+				<include name="**/**" />
+			</fileset>
+		</copy>
+		<copy todir="${build.classes.dir}">
+			<fileset dir="${probe.src.dir}">
+				<include name="*.properties" />
+			</fileset>
+		</copy>
+
+		<mkdir dir="${dist.dir}" />
+
+		<!-- os.family = "unix", "windows" -->
+		<osfamily property="os.family" />
+		<echo message="os.family=${os.family} os.name=${os.name}" />
+
+		<!-- set e.g unix=true to be used in if="unix" conditions -->
+		<property name="${os.family}" value="true" />
+
+		<!-- See http://www.vamphq.com/osp.html for other os.name settings -->
+		<condition property="linux">
+			<equals arg1="${os.name}" arg2="Linux" />
+		</condition>
+
+		<condition property="sun">
+			<!-- "sun" is used below for if="sun" conditions -->
+			<equals arg1="${os.name}" arg2="SunOS" />
+		</condition>
+
+		<!-- These filters replace in your code @version@, @build.timestamp@ etc with
+        	 the current values if the copy task contains a filtering="true" attribute.	-->
+		<filter token="version" value="${version}" />
+		<filter token="build.timestamp" value="${build.timestamp}" />
+		<filter token="build.java.version" value="${java.version}" />
+		<filter token="build.java.vendor" value="${java.vendor}" />
+		<!-- see more filters in prepare-cpp task -->
+
+		<echo message="Build timestamp = ${build.timestamp} version = ${version}" />
+
+		<echo message="Java version            = ${java.version}" />
+		<echo message="Java target version     = ${target}" />
+		<echo message="Java source version     = ${source}" />
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Runs before the build process.                                      -->
+	<!-- =================================================================== -->
+	<target name="pre.build" depends="resolve, prepare" />
+
+	<!-- ====================================================================== -->
+	<!-- Prepare java build directories                                         -->
+	<!-- ====================================================================== -->
+	<target name="prepare.java" depends="prepare" description="For internal use only">
+
+		<!-- Create the necessary Java build directories -->
+		<mkdir dir="${build.classes.dir}" />
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Runs after the build process.                                       -->
+	<!-- =================================================================== -->
+	<target name="post.build" depends="update.build.file" />
+
+	<!-- =================================================================== -->
+	<!-- Updates the build file.                                             -->
+	<!-- =================================================================== -->
+	<target name="update.build.file" depends="" description="Runs after the compilation is complete">
+
+		<!-- Update the build information -->
+		<propertyfile file="${etc.dir}${file.separator}${build.filename}" comment="Application build properties">
+
+			<!-- The build version -->
+			<entry key="build_major_version" type="string" value="${impl.version.major}" />
+			<entry key="build_minor_version" type="string" value="${impl.version.minor}" />
+			<entry key="build_micro_version" type="string" value="${impl.version.micro}" />
+			<entry key="build_featureset" type="string" value="${impl.version.featureset}" />
+
+			<!-- The continuous build id -->
+			<entry key="build_id" type="int" default="0000" pattern="0000" operation="+" />
+
+			<!-- The version name (major.minor.micro) -->
+			<entry key="version_name" type="string" value="${impl.version.name}" />
+
+			<!-- The build date -->
+			<entry key="build_date" type="date" value="now" pattern="yyyy.MM.dd HH:mm:ss z" />
+		</propertyfile>
+
+		<copy file="${etc.dir}${file.separator}${build.filename}" todir="${build.etc.dir}" />
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Compiles/builds the library                                         -->
+	<!-- =================================================================== -->
+	<target name="compile" depends="" description="Compile the vehsnag library">
+		<echo message="Compiling vehsnag library" />
+		<echo message="-------------------------" />
+		<echo message="" />
+		
+        <!-- Compile the API related classes -->
+        <javac srcdir="${api.src.dir}" destdir="${build.classes.dir}${file.separator}api" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
+            <classpath>
+                <path refid="cots.libraries" />
+                <path refid="atms.libraries" />
+                <path refid="project.class.path" />
+            </classpath>
+        </javac>		
+
+		<!-- Compile the probe application -->
+		<javac srcdir="${probe.src.dir}" destdir="${build.classes.dir}${file.separator}probe" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
+			<classpath>
+				<path refid="cots.libraries" />
+				<path refid="atms.libraries" />
+				<path refid="project.class.path" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="build" depends="pre.build, compile, post.build" description="Build the Dan Ryan simulator">
+		<echo message="Building vehsnag library" />
+		<echo message="------------------------" />
+		<echo message="" />
+
+        <!-- Compile the API related classes -->
+        <javac srcdir="${api.src.dir}" destdir="${build.classes.dir}${file.separator}api" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
+            <classpath>
+                <path refid="libraries" />
+                <path refid="cots.libraries" />
+                <path refid="project.class.path" />
+            </classpath>
+        </javac>        
+
+        <!-- Compile the probe application -->
+        <javac srcdir="${probe.src.dir}" destdir="${build.classes.dir}${file.separator}probe" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
+            <classpath>
+                <path refid="cots.libraries" />
+                <path refid="atms.libraries" />
+                <path refid="project.class.path" />
+            </classpath>
+        </javac>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Jar the VLC launcher application.                                   -->
+	<!-- =================================================================== -->
+	<target name="build.clean" depends="java.clean, build" description="Build clean copy of the schema binder library" />
+
+	<!-- =================================================================== -->
+	<!-- Jar the VLC launcher application.                                   -->
+	<!-- =================================================================== -->
+	<target name="jar" depends="build" description="Jar the library">
+		<echo message="Jarring the vehsnag library" />
+		<echo message="---------------------------" />
+		<echo message="" />
+		
+        <!-- Jar API application classes -->
+        <jar destfile="${build.vehsnag-api.jar}" basedir="${build.classes.dir}${file.separator}api" index="true" includes="com/parsons/**">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}" />
+                <attribute name="Specification-Title" value="${spec.title}" />
+                <attribute name="Specification-Vendor" value="${spec.vendor}" />
+                <attribute name="Specification-Version" value="${spec.version}" />
+                <attribute name="Implementation-Title" value="${impl.title}" />
+                <attribute name="Implementation-Vendor" value="${impl.vendor}" />
+                <attribute name="Implementation-Version" value="${impl.version.name} ${DATE}" />
+            </manifest>
+        </jar>		
+
+		<!-- Jar probe application classes -->
+		<jar destfile="${build.vehsnag-probe.jar}" basedir="${build.classes.dir}${file.separator}probe" index="true" includes="com/parsons/**">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Specification-Title" value="${spec.title}" />
+				<attribute name="Specification-Vendor" value="${spec.vendor}" />
+				<attribute name="Specification-Version" value="${spec.version}" />
+				<attribute name="Implementation-Title" value="${impl.title}" />
+				<attribute name="Implementation-Vendor" value="${impl.vendor}" />
+				<attribute name="Implementation-Version" value="${impl.version.name} ${DATE}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="jar.clean" depends="java.clean, jar" />
+
+	<target name="jar.internal" depends="jar.clean" />
+
+</project>
