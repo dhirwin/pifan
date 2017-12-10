@@ -44,14 +44,6 @@ Ant build tool.
 	<!-- =================================================================== -->
 	<property file="${basedir}${file.separator}default.properties" />
 
-	<!-- Import the ATMS commons Ant tasks -->
-	<import>
-		<javaresource name="ant-src/common.xml">
-			<classpath location="lib/atms/atms-commons-build.jar">
-			</classpath>
-		</javaresource>
-	</import>
-
 	<!-- =================================================================== -->
 	<!-- Other default build properties.                                     -->
 	<!-- =================================================================== -->
@@ -63,18 +55,11 @@ Ant build tool.
 			<include name="*.jar" />
 		</fileset>
 	</path>
-	
-    <path id="atms.libraries">
-        <fileset dir="${atms.dir}">
-            <include name="*.jar" />
-        </fileset>
-    </path>	
 
 	<!-- Path reference for the project classpath -->
 	<path id="project.class.path">
 		<pathelement path="${build.conf.dir}" />
-		<pathelement path="${build.classes.dir}${file.separator}api" />
-		<pathelement path="${build.classes.dir}${file.separator}probe" />
+		<pathelement path="${build.classes.dir}" />
 		<fileset dir="${cots.dir}">
 			<include name="**/*.jar" />
 		</fileset>
@@ -90,6 +75,7 @@ Ant build tool.
 	<!-- ====================================================================== -->
 	<!-- Create the build directory and fetch operating system specifics     	-->
 	<!-- ====================================================================== -->
+
 	<target name="prepare" description="For internal use only">
 		<echo message="Preparing the build environment" />
 		<echo message="-------------------------------" />
@@ -101,8 +87,6 @@ Ant build tool.
 
 		<!-- Create the necessary build folders -->
 		<mkdir dir="${build.classes.dir}" />
-	    <mkdir dir="${build.classes.dir}${file.separator}api" />
-	    <mkdir dir="${build.classes.dir}${file.separator}probe" />
 		<mkdir dir="${build.etc.dir}" />
 
 		<!-- Copy all of the images -->
@@ -116,7 +100,7 @@ Ant build tool.
 
 		<!-- Copy over the Hibernate mapping files -->
 		<copy todir="${build.classes.dir}">
-			<fileset dir="${probe.src.dir}">
+			<fileset dir="${src.dir}">
 				<patternset refid="meta.files" />
 			</fileset>
 		</copy>
@@ -126,7 +110,6 @@ Ant build tool.
 		<copy todir="${build.cots.dir}">
 			<fileset dir="${cots.dir}">
 				<include name="*.jar" />
-				<include name="JNativeCpp.dll" />
 			</fileset>
 		</copy>
 
@@ -137,7 +120,7 @@ Ant build tool.
 			</fileset>
 		</copy>
 		<copy todir="${build.classes.dir}">
-			<fileset dir="${probe.src.dir}">
+			<fileset dir="${src.dir}">
 				<include name="*.properties" />
 			</fileset>
 		</copy>
@@ -179,13 +162,12 @@ Ant build tool.
 	<!-- =================================================================== -->
 	<!-- Runs before the build process.                                      -->
 	<!-- =================================================================== -->
-	<target name="pre.build" depends="resolve, prepare" />
+	<target name="pre.build" depends="prepare" />
 
 	<!-- ====================================================================== -->
 	<!-- Prepare java build directories                                         -->
 	<!-- ====================================================================== -->
 	<target name="prepare.java" depends="prepare" description="For internal use only">
-
 		<!-- Create the necessary Java build directories -->
 		<mkdir dir="${build.classes.dir}" />
 	</target>
@@ -225,82 +207,53 @@ Ant build tool.
 	<!-- =================================================================== -->
 	<!-- Compiles/builds the library                                         -->
 	<!-- =================================================================== -->
-	<target name="compile" depends="" description="Compile the vehsnag library">
+	
+	<target name="compile" depends="" description="Compile the project">
 		<echo message="Compiling vehsnag library" />
 		<echo message="-------------------------" />
 		<echo message="" />
-		
-        <!-- Compile the API related classes -->
-        <javac srcdir="${api.src.dir}" destdir="${build.classes.dir}${file.separator}api" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
-            <classpath>
-                <path refid="cots.libraries" />
-                <path refid="atms.libraries" />
-                <path refid="project.class.path" />
-            </classpath>
-        </javac>		
 
-		<!-- Compile the probe application -->
-		<javac srcdir="${probe.src.dir}" destdir="${build.classes.dir}${file.separator}probe" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
+		<!-- Compile the related classes -->
+		<javac srcdir="${src.dir}" destdir="${build.classes.dir}" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}">
 			<classpath>
 				<path refid="cots.libraries" />
-				<path refid="atms.libraries" />
 				<path refid="project.class.path" />
 			</classpath>
 		</javac>
 	</target>
 
-	<target name="build" depends="pre.build, compile, post.build" description="Build the Dan Ryan simulator">
+	<target name="build" depends="pre.build, compile, post.build" description="Build the project">
 		<echo message="Building vehsnag library" />
 		<echo message="------------------------" />
 		<echo message="" />
 
-        <!-- Compile the API related classes -->
-        <javac srcdir="${api.src.dir}" destdir="${build.classes.dir}${file.separator}api" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
-            <classpath>
-                <path refid="libraries" />
-                <path refid="cots.libraries" />
-                <path refid="project.class.path" />
-            </classpath>
-        </javac>        
-
-        <!-- Compile the probe application -->
-        <javac srcdir="${probe.src.dir}" destdir="${build.classes.dir}${file.separator}probe" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}" >
-            <classpath>
-                <path refid="cots.libraries" />
-                <path refid="atms.libraries" />
-                <path refid="project.class.path" />
-            </classpath>
-        </javac>
+		<!-- Compile the related classes -->
+		<javac srcdir="${api.src.dir}" destdir="${build.classes.dir}" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}">
+			<classpath>
+				<path refid="libraries" />
+				<path refid="cots.libraries" />
+				<path refid="project.class.path" />
+			</classpath>
+		</javac>
 	</target>
 
 	<!-- =================================================================== -->
 	<!-- Jar the VLC launcher application.                                   -->
 	<!-- =================================================================== -->
-	<target name="build.clean" depends="java.clean, build" description="Build clean copy of the schema binder library" />
+	
+	<target name="build.clean" depends="java.clean, build" description="Build clean copy of the project" />
 
 	<!-- =================================================================== -->
 	<!-- Jar the VLC launcher application.                                   -->
 	<!-- =================================================================== -->
-	<target name="jar" depends="build" description="Jar the library">
-		<echo message="Jarring the vehsnag library" />
-		<echo message="---------------------------" />
+	
+	<target name="jar" depends="build" description="Jar the project">
+		<echo message="Jarring the PI fan project" />
+		<echo message="--------------------------" />
 		<echo message="" />
-		
-        <!-- Jar API application classes -->
-        <jar destfile="${build.vehsnag-api.jar}" basedir="${build.classes.dir}${file.separator}api" index="true" includes="com/parsons/**">
-            <manifest>
-                <attribute name="Built-By" value="${user.name}" />
-                <attribute name="Specification-Title" value="${spec.title}" />
-                <attribute name="Specification-Vendor" value="${spec.vendor}" />
-                <attribute name="Specification-Version" value="${spec.version}" />
-                <attribute name="Implementation-Title" value="${impl.title}" />
-                <attribute name="Implementation-Vendor" value="${impl.vendor}" />
-                <attribute name="Implementation-Version" value="${impl.version.name} ${DATE}" />
-            </manifest>
-        </jar>		
 
-		<!-- Jar probe application classes -->
-		<jar destfile="${build.vehsnag-probe.jar}" basedir="${build.classes.dir}${file.separator}probe" index="true" includes="com/parsons/**">
+		<!-- Jar API application classes -->
+		<jar destfile="${build.pifan.jar}" basedir="${build.classes.dir}" index="true" includes="org/pifan/**">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 				<attribute name="Specification-Title" value="${spec.title}" />
@@ -317,4 +270,24 @@ Ant build tool.
 
 	<target name="jar.internal" depends="jar.clean" />
 
+	<target name="java.clean" depends="" description="Remove generated Java files">
+		<delete includeEmptyDirs="true" failonerror="false">
+			<!-- Delete any jar files in the build/classes/lib directory -->
+			<fileset dir="${build.lib.dir}" includes="*.jar" />
+
+			<!-- 
+	                We also want any published ivy.xml file to also be deleted as keeping
+	                this around can cause publishing issues (especially if you change anything
+	                in your ivy.xml file).
+	            -->
+			<fileset dir="${build.lib.dir}" includes="ivy.xml" />
+
+			<!-- Delete all of the class files -->
+			<fileset dir="${build.classes.dir}" includes="**/*.class" />
+		</delete>
+
+		<!-- Delete any other residual build artifacts -->
+		<delete file="${build.timestamp.file}" />
+		<delete file="${build.manifest.file}" />
+	</target>
 </project>
