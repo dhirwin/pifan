@@ -91,7 +91,7 @@ Ant build tool.
 
 		<!-- Copy all of the images -->
 		<copy todir="${build.classes.dir}">
-			<fileset dir="${probe.src.dir}">
+			<fileset dir="${src.dir}">
 				<include name="**/**.jpg" />
 				<include name="**/**.png" />
 				<include name="**/**.gif" />
@@ -228,7 +228,7 @@ Ant build tool.
 		<echo message="" />
 
 		<!-- Compile the related classes -->
-		<javac srcdir="${api.src.dir}" destdir="${build.classes.dir}" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}">
+		<javac srcdir="${src.dir}" destdir="${build.classes.dir}" debug="${debug}" optimize="${optimize}" deprecation="${deprecation}" target="${target}" source="${source}">
 			<classpath>
 				<path refid="libraries" />
 				<path refid="cots.libraries" />
