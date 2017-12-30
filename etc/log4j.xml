@@ -30,7 +30,7 @@
     -->
     <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
 
-        <param name="File" value="${atms.log.dir}/${atms.log.filename}" />
+        <param name="File" value="${log.dir}/${log.filename}" />
         <param name="Append" value="true" />
         <param name="MaxFileSize" value="25MB" />
         <param name="MaxBackupIndex" value="10" />
@@ -52,23 +52,7 @@
         <priority value="WARN" />
     </category>
 
-    <category name="com.delcan">
-        <priority value="DEBUG" />
-    </category>
-
-    <category name="common">
-        <priority value="DEBUG" />
-    </category>
-    
-    <category name="display">
-        <priority value="DEBUG" />
-    </category>
-    
-    <category name="protocol">
-        <priority value="DEBUG" />
-    </category>        
-
-    <category name="server.services">
+    <category name="org.pifan">
         <priority value="DEBUG" />
     </category>
     
