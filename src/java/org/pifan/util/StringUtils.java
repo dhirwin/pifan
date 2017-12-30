@@ -18,7 +18,7 @@ import com.google.common.primitives.Chars;
 /**
  * 
  *
- * @author Dave Irwin (david.irwin@parsons.com)
+ * @author Dave Irwin (dhirwinjr@gmail.com)
  */
 public class StringUtils {
     /**

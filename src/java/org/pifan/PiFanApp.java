@@ -19,6 +19,10 @@
 
 package org.pifan;
 
+import java.util.Properties;
+
+import org.pifan.io.GpioControl;
+import org.pifan.schedule.JobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,14 +49,29 @@ public class PiFanApp {
     private void start() {
         logger.debug("Starting PiFan application");
 
-        GpioControl gpio = new GpioControl(8, "Outlet");
+        final GpioControl gpio = new GpioControl(8, "Outlet");
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                gpio.shutdown();
+            }
+        });
 
         try {
+            Properties schProps = new Properties();
+
+            JobScheduler scheduler = new JobScheduler(schProps);
+            scheduler.registerWorker(() -> {
+                gpio.turnOn();
+            }, "0 10,40 * * * ?", "fanOn");
+
+            scheduler.registerWorker(() -> {
+                gpio.turnOff();
+            }, "0 25,55 * * * ?", "fanOff");
+
+            // default by turning the fan on
             gpio.turnOn();
-
-            Thread.sleep(1000 * 3);
-
-            gpio.turnOff();
         } catch (Exception ex) {
             logger.error("Error: " + ex, ex);
         }
@@ -65,8 +84,6 @@ public class PiFanApp {
         try {
             PiFanApp app = new PiFanApp();
             app.start();
-
-            logger.debug("Exiting PiFan application");
         } catch (Exception ex) {
             logger.error("Error: " + ex, ex);
         }

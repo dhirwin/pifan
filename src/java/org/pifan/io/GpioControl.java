@@ -17,7 +17,7 @@
  * under the License.
  *************************************************************************/
 
-package org.pifan;
+package org.pifan.io;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,8 @@ import com.pi4j.io.gpio.PinState;
 import com.pi4j.io.gpio.RaspiPin;
 
 /**
- *
+ * Used to control the general I/O pins on a Raspberry PI.
+ * 
  * @author Dave Irwin (dhirwinjr@gmail.com)
  */
 public class GpioControl {
@@ -76,19 +77,19 @@ public class GpioControl {
         Pin gpioPin = RaspiPin.getPinByAddress(this.gpioPinNum);
 
         // provision gpio pin #08 as an output pin and turn off
-        this.outletPin = this.gpio.provisionDigitalOutputPin(gpioPin, this.desc, PinState.LOW);
+        this.outletPin = this.gpio.provisionDigitalOutputPin(gpioPin, this.desc, PinState.HIGH);
 
         // set the shutdown state
-        this.outletPin.setShutdownOptions(true, PinState.LOW);
+        this.outletPin.setShutdownOptions(true, PinState.HIGH);
     }
 
     /**
      * 
      */
-    public void turnOn() {
-        logger.debug("Turning GPIO on [pinNum: {}, desc: {}]", this.gpioPinNum, this.desc);
+    public void shutdown() {
+        logger.debug("Shutting down GPIO");
 
-        this.outletPin.setState(PinState.HIGH);
+        this.gpio.shutdown();
     }
 
     /**
@@ -96,6 +97,15 @@ public class GpioControl {
      */
     public void turnOff() {
         logger.debug("Turning GPIO off [pinNum: {}, desc: {}]", this.gpioPinNum, this.desc);
+
+        this.outletPin.setState(PinState.HIGH);
+    }
+
+    /**
+     * 
+     */
+    public void turnOn() {
+        logger.debug("Turning GPIO on [pinNum: {}, desc: {}]", this.gpioPinNum, this.desc);
 
         this.outletPin.setState(PinState.LOW);
     }
